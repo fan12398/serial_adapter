@@ -1,0 +1,6 @@
+/__pycache__
+/rfid_log
+/.vscode
+/build
+/dist
+/*.spec
