@@ -10,6 +10,8 @@ import argparse
 import sys
 import logging
 # pyqt5
+import sip
+import PyQt5.QtGui
 from PyQt5.QtCore import QThread, QTimer
 from PyQt5.QtWidgets import QApplication
 # user lib
@@ -73,9 +75,9 @@ class CAdapter(QThread):
 
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p','--port', type=str, required=True, help="读卡器串口号 eg: COM5, /dev/ttyUSB0")
-    parser.add_argument('-t','--timeout', type=int, default=10, help="寻卡丢失判断超时 N*0.1秒")
-    parser.add_argument('-r','--reverse', action='store_true', default=False, help="是否为反向寻卡模式")
+    parser.add_argument('-p','--port', type=str, required=True, help="RFID reader serial port eg: COM5, /dev/ttyUSB0")
+    parser.add_argument('-t','--timeout', type=int, default=10, help="tag search missing timeout, N*0.1 seconds")
+    parser.add_argument('-r','--reverse', action='store_true', default=False, help="indicate whether inverse tag search mode")
     return parser.parse_args(argv)
 
 

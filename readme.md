@@ -1,0 +1,1 @@
+pyinstaller -Fw --clean rfid_adapter.py

@@ -1,4 +1,5 @@
 import hashlib
+import uuid
 
 def md5(sn_head):
     temp = 0
@@ -12,14 +13,20 @@ def md5(sn_head):
     m = hashlib.md5()
     m.update(s1)
     #返回带第16-19位，0D9E
-    return m.hexdigest().upper()[-4:]
+    return(m.hexdigest().upper()[-4:])
 
-def macGenSN(mac, prefix='WLT'):
-    pass
+def get_mac_address(): 
+    mac=uuid.UUID(int = uuid.getnode()).hex[-12:].upper()
+    return("".join([mac[e:e+2] for e in range(0,11,2)]))
 
+def generateSN(prefix='WLM'):
+    mac = get_mac_address()
+    sn = prefix + mac
+    sn += md5(sn)
+    return(sn)
 
 if __name__ == "__main__":
     tid = b'\xe2\x80\x11``\x00\x02\x0e8%\xd4\x84'
     a = ''.join(['%02X' % b for b in tid])
-    print(a)
+    print(generateSN())
     #print(macGenSN(tid))
