@@ -45,8 +45,8 @@ class CHR50X(QThread):
         try:
             self.uart.open()
         except serial.serialutil.SerialException:
-            self.sigSerialError.emit()
             self.log.error("failed opening serial port: %s!" %(self.uart.port))
+            self.sigSerialError.emit()
         else:
             open_flag = True
             self.runflag = True
@@ -67,8 +67,8 @@ class CHR50X(QThread):
             self.log.debug("serial send: " + str(buf))
             result = True
         else:
-            self.sigSerialError.emit()
             self.log.error("serial failed send: " + str(buf) + ", port is closed.")
+            self.sigSerialError.emit()
         return(result)
     
     def checkBcc(self, dat):
@@ -96,8 +96,8 @@ class CHR50X(QThread):
             try:
                 buf = self.uart.read(UART_READ_LEN)
             except serial.serialutil.SerialException:
-                self.sigSerialError.emit()
                 self.log.error("serial read error: serial.serialutil.SerialException")
+                self.sigSerialError.emit()
             else:
                 if(buf):
                     self.log.debug("recv raw: " + str(buf))
