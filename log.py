@@ -40,7 +40,7 @@ class Log(object):
 
         # 定义handler的输出格式
         formatter = logging.Formatter(
-            '[%(asctime)s] %(filename)s->%(funcName)s:%(lineno)d [%(levelname)s]%(message)s')
+            '[%(asctime)s] [%(levelname)s] %(filename)s->%(funcName)s:%(lineno)d %(message)s')
         fh.setFormatter(formatter)
         ch.setFormatter(formatter)
 
