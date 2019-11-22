@@ -1,5 +1,6 @@
 import hashlib
 import uuid
+import socket
 
 def md5(sn_head):
     temp = 0
@@ -19,6 +20,16 @@ def get_mac_address():
     mac=uuid.UUID(int = uuid.getnode()).hex[-12:].upper()
     return("".join([mac[e:e+2] for e in range(0,11,2)]))
 
+def get_ip_adrress():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    finally:
+        s.close()
+    return(ip)
+
+
 def generateSN(prefix='WLM'):
     mac = get_mac_address()
     sn = prefix + mac
@@ -28,5 +39,5 @@ def generateSN(prefix='WLM'):
 if __name__ == "__main__":
     tid = b'\xe2\x80\x11``\x00\x02\x0e8%\xd4\x84'
     a = ''.join(['%02X' % b for b in tid])
-    print(generateSN())
-    #print(macGenSN(tid))
+    #print(generateSN())
+    print(get_ip_adrress())

@@ -67,10 +67,12 @@ class CAdapter(QThread):
 
     # please rewrite these two functions to implement the events    
     def pickupEvent(self, tag):
-        pass
+        data = {'sensor_flag':1, 'sensor_uid':tag}
+        self.comm.send(json.dumps(data))
 
     def putdownEvent(self, tag):
-        pass
+        data = {'sensor_flag':0, 'sensor_uid':tag}
+        self.comm.send(json.dumps(data))
 
 
 def parse_arguments(argv):
