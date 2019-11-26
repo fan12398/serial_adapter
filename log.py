@@ -21,22 +21,20 @@ class Log(object):
         # 创建一个handler，用于写入日志文件
         self.log_time = time.strftime("%Y_%m_%d")
         file_dir = os.getcwd() + '/' + log_cate
-        # print(os.path.abspath(os.path.dirname(__file__)))
+        #file_dir = os.path.abspath(os.path.dirname(__file__)) + '/' + log_cate
         if not os.path.exists(file_dir):
             os.mkdir(file_dir)
         self.log_path = file_dir
         self.log_name = self.log_path + "/" + self.log_time + '.log'
-        #print(self.log_name)
 
-        #fh = logging.FileHandler(self.log_name, 'a')  # 追加模式  这个是python2的
         fh = logging.FileHandler(self.log_name, 'a', encoding='utf-8')  # 这个是python3的
         fh.setLevel(file_level)
-        #fh.setLevel(logging.INFO)
+        # fh.setLevel(logging.INFO)
 
         # 再创建一个handler，用于输出到控制台
         ch = logging.StreamHandler()
         ch.setLevel(console_level)
-        #ch.setLevel(logging.INFO)
+        # ch.setLevel(logging.INFO)
 
         # 定义handler的输出格式
         formatter = logging.Formatter(
