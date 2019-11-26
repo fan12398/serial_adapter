@@ -91,6 +91,11 @@ class CHR50X(QThread):
         self.log.info("send stop inventory packet")
         self.send(pkt)
     
+    def get_device_id(self):
+        pkt = b'\x1b\x03\x00\x00\x00\x00\x00'
+        self.log.info("send get device id packet")
+        self.send(pkt)
+    
     def run(self):
         while(self.runflag):
             try:

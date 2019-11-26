@@ -1,6 +1,9 @@
 import hashlib
 import uuid
 import socket
+import random
+import os
+import json
 
 def md5(sn_head):
     temp = 0
@@ -30,14 +33,29 @@ def get_ip_adrress():
     return(ip)
 
 
-def generateSN(prefix='WLM'):
+def macGenSN(prefix='WLM2'):
     mac = get_mac_address()
-    sn = prefix + mac
+    sn = prefix + mac[1:]
     sn += md5(sn)
     return(sn)
 
+def generateSN(prefix='WLM2'):
+    sn_path = os.getcwd() + '/sn.json'
+    try:
+        fr = open(sn_path, 'r')
+    except FileNotFoundError:
+        fw = open(sn_path, 'w')
+        ran = random.randint(0, pow(16, 11))
+        sn = prefix + ('%011X' %ran)[-11:]
+        sn += md5(sn)
+        json.dump({'sn':sn}, fw)
+    else:
+        js = json.load(fr)
+        sn = js['sn']
+    return(sn)
+
 if __name__ == "__main__":
-    tid = b'\xe2\x80\x11``\x00\x02\x0e8%\xd4\x84'
-    a = ''.join(['%02X' % b for b in tid])
-    #print(generateSN())
+    print(macGenSN())
     print(get_ip_adrress())
+    print(generateSN())
+    

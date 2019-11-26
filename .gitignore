@@ -4,3 +4,5 @@
 /build
 /dist
 /*.spec
+/sn.json
+/rfid_adapter
