@@ -17,6 +17,7 @@ HEARTBEAT_TIME = 180
 
 MQTT_BROKER = 'mqtt.tx1.meetwhale.com'
 MQTT_PORT = 1883
+DEST_MQTT_PORT = 1884
 
 CENTRAL_SERVER = 'http://192.168.2.192:9898'
 REGISTER_URL = CENTRAL_SERVER + '/register'
@@ -24,7 +25,7 @@ HEARTBEAT_URL = CENTRAL_SERVER + '/heart'
 LISTEN_PORT = 64666
 
 class CComm(QThread):
-    def __init__(self, log_cate='rfid_log', loglevel=logging.WARN):
+    def __init__(self, dest=None, log_cate='rfid_log', loglevel=logging.WARN):
         super().__init__()
         # init params
         self.request_id = 0
@@ -37,7 +38,18 @@ class CComm(QThread):
         try:
             self.mqtt.connect(MQTT_BROKER, MQTT_PORT, 60)
         except:
-            self.log.error('mqtt broker connect error')
+            self.log.error('mqtt connect error: ' + MQTT_BROKER + str(MQTT_PORT))
+        # dest mqtt
+        self.dest_mqtt = []
+        if(dest != None):
+            for d in dest:
+                client = mqtt.Client()
+                try:
+                    client.connect(d, DEST_MQTT_PORT, 60)
+                except:
+                    self.log.error('mqtt connect error: ' + d + str(DEST_MQTT_PORT))
+                else:
+                    self.dest_mqtt.append(client)
         # start thread
         self.start()
         # register
@@ -101,6 +113,22 @@ class CComm(QThread):
         body = json.dumps(payload)
         self.mqtt.publish('device-data', body, 1)
         self.log.info('device-data: ' + body)
+    
+    def send(self, data, ant_id):
+        payload = {}
+        payload['cmd'] = 2
+        payload['data'] = data
+        payload['id'] = 1
+        payload['proto_ver'] = '1.0.0'
+        payload['sn'] = self.sn
+        payload['timestamp'] = int(time.time())
+        body = json.dumps(payload)
+        try:
+            self.dest_mqtt[ant_id].publish('device-data', body, 1)
+        except IndexError:
+            self.mqtt.publish('device-data', body, 1)
+        else:
+            self.log.info('device-data: ' + body)
     
     def run(self):
         self.mqtt.loop_forever()

@@ -19,19 +19,20 @@ from chr50x import CHR50X
 from mqtt import CComm
 
 class CAdapter(QThread):
-    def __init__(self, port, reverse=False, timeout=10):
+    def __init__(self, port, reverse=False, timeout=10, dest=None):
         super().__init__()
         self.tags = {}
         self.reverse = reverse
         self.timeout = timeout
         
-        # init trans communicator
-        self.comm = CComm()
         # init rfid device
         self.rfid = CHR50X(port)
         self.rfid.sigTag.connect(self.procTagsNew)
         self.rfid.sigSerialError.connect(self.procError)
         self.rfid.open()
+        # init trans communicator
+        self.comm = CComm(dest=dest)
+
         # start inventory forever
         self.rfid.inventory(self.rfid.Forever)
         # start run tag timeout
@@ -47,34 +48,35 @@ class CAdapter(QThread):
         if(tid not in self.tags):
             if(self.reverse):
                 print("pick up:", tid)
-                self.pickupEvent(tid)
+                self.pickupEvent(tid, ant)
             else:
                 print("put down:", tid)
-                self.putdownEvent(tid)
-        self.tags[tid] = 0
+                self.putdownEvent(tid, ant)
+        self.tags[tid] = [0, ant]
+        # [0]->timeout count [1]->ant_id
     
     def procTagsTimeout(self):
         for id in list(self.tags.keys()):
-            self.tags[id] += 1
-            if(self.tags[id] >= self.timeout):
-                del self.tags[id]
+            self.tags[id][0] += 1
+            if(self.tags[id][0] >= self.timeout):
                 if(self.reverse):
                     print("put down:", id)
-                    self.putdownEvent(id)
+                    self.putdownEvent(id, self.tags[id][1])
                 else:
                     print("pick up:", id)
-                    self.pickupEvent(id)
+                    self.pickupEvent(id, self.tags[id][1])
+                del self.tags[id]
 
     # please rewrite these two functions to implement the events    
-    def pickupEvent(self, tag):
+    def pickupEvent(self, tag, ant_id):
         sn = self.tag2sn(tag)
         data = {'sensor_flag':1, 'sensor_uid':sn}
-        self.comm.send(data)
+        self.comm.send(data, ant_id)
 
-    def putdownEvent(self, tag):
+    def putdownEvent(self, tag, ant_id):
         sn = self.tag2sn(tag)
         data = {'sensor_flag':0, 'sensor_uid':sn}
-        self.comm.send(data)
+        self.comm.send(data, ant_id)
     
     def tag2sn(self, bs):
         tag = ''.join(['%02X' %b for b in bs])
@@ -92,15 +94,15 @@ def parse_arguments(argv):
     parser.add_argument('-p','--port', type=str, required=True, help="RFID reader serial port eg: COM5, /dev/ttyUSB0")
     parser.add_argument('-t','--timeout', type=int, default=10, help="tag search missing timeout, N*0.1 seconds")
     parser.add_argument('-r','--reverse', action='store_true', default=False, help="indicate whether inverse tag search mode")
+    parser.add_argument('-d','--dest', type=str, nargs='+', help='help')
     return parser.parse_args(argv)
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     args = parse_arguments(sys.argv[1:])
 
-    rfid_adapter = CAdapter(port=args.port, reverse=args.reverse, timeout=args.timeout)
+    rfid_adapter = CAdapter(port=args.port, reverse=args.reverse, timeout=args.timeout, dest=args.dest)
 
     sys.exit(app.exec_())
 
