@@ -19,19 +19,19 @@ from chr50x import CHR50X
 from mqtt import CComm
 
 class CAdapter(QThread):
-    def __init__(self, port, reverse=False, timeout=10, dest=None):
+    def __init__(self, port, reverse=False, timeout=10, dest=None, loglevel=logging.WARN):
         super().__init__()
         self.tags = {}
         self.reverse = reverse
         self.timeout = timeout
         
         # init rfid device
-        self.rfid = CHR50X(port)
+        self.rfid = CHR50X(port,loglevel=loglevel)
         self.rfid.sigTag.connect(self.procTagsNew)
         self.rfid.sigSerialError.connect(self.procError)
         self.rfid.open()
         # init trans communicator
-        self.comm = CComm(dest=dest)
+        self.comm = CComm(dest=dest,loglevel=loglevel)
 
         # start inventory forever
         self.rfid.inventory(self.rfid.Forever)
@@ -71,12 +71,12 @@ class CAdapter(QThread):
     def pickupEvent(self, tag, ant_id):
         sn = self.tag2sn(tag)
         data = {'sensor_flag':1, 'sensor_uid':sn}
-        self.comm.send(data, ant_id)
+        self.comm.send_dest(data, ant_id)
 
     def putdownEvent(self, tag, ant_id):
         sn = self.tag2sn(tag)
         data = {'sensor_flag':0, 'sensor_uid':sn}
-        self.comm.send(data, ant_id)
+        self.comm.send_dest(data, ant_id)
     
     def tag2sn(self, bs):
         tag = ''.join(['%02X' %b for b in bs])
@@ -94,7 +94,8 @@ def parse_arguments(argv):
     parser.add_argument('-p','--port', type=str, required=True, help="RFID reader serial port eg: COM5, /dev/ttyUSB0")
     parser.add_argument('-t','--timeout', type=int, default=10, help="tag search missing timeout, N*0.1 seconds")
     parser.add_argument('-r','--reverse', action='store_true', default=False, help="indicate whether inverse tag search mode")
-    parser.add_argument('-d','--dest', type=str, nargs='+', help='help')
+    parser.add_argument('-d','--destination', type=str, nargs='+', help='remote destination ip of ubuntu mqtt broker')
+    parser.add_argument('-l','--loglevel', type=str, default='warn', help='log level, eg: debug, info, warn, error, critical, fatal')
     return parser.parse_args(argv)
 
 if __name__ == "__main__":
@@ -102,7 +103,21 @@ if __name__ == "__main__":
 
     args = parse_arguments(sys.argv[1:])
 
-    rfid_adapter = CAdapter(port=args.port, reverse=args.reverse, timeout=args.timeout, dest=args.dest)
+    if(args.loglevel.lower() == 'debug'):
+        loglevel = logging.DEBUG
+    elif(args.loglevel.lower() == 'info'):
+        loglevel = logging.INFO
+    elif(args.loglevel.lower() == 'warn'):
+        loglevel = logging.WARN
+    elif(args.loglevel.lower() == 'error'):
+        loglevel = logging.ERROR
+    elif(args.loglevel.lower() == 'critical'):
+        loglevel = logging.CRITICAL
+    elif(args.loglevel.lower() == 'fatal'):
+        loglevel = logging.FATAL
+    else:
+        loglevel = logging.WARN
+
+    rfid_adapter = CAdapter(port=args.port, reverse=args.reverse, timeout=args.timeout, dest=args.destination, loglevel=loglevel)
 
     sys.exit(app.exec_())
-
