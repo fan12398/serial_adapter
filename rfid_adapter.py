@@ -21,7 +21,8 @@ from mqtt import CComm
 class CAdapter(QThread):
     def __init__(self, port, reverse=False, timeout=10, dest=None, loglevel=logging.WARN):
         super().__init__()
-        self.tags = {}
+        # 4 antennas
+        self.tags = [{} for i in range(4)]
         self.reverse = reverse
         self.timeout = timeout
         
@@ -44,28 +45,50 @@ class CAdapter(QThread):
         print("receive serial error signal, close application!!!")
         sys.exit(0)
     
+    def inWhichAnt(self, tid):
+        for ant in range(len(self.tags)):
+            if(tid in self.tags[ant]):
+                return(ant)
+        return(-1)
+    
     def procTagsNew(self, type, rssi, tid, ant):
-        if(tid not in self.tags):
+        occu_ant = self.inWhichAnt(tid)
+        if(occu_ant == -1):
             if(self.reverse):
                 print("pick up:", tid)
                 self.pickupEvent(tid, ant)
             else:
                 print("put down:", tid)
                 self.putdownEvent(tid, ant)
-        self.tags[tid] = [0, ant]
-        # [0]->timeout count [1]->ant_id
-    
+            self.tags[ant][tid] = 0
+        elif(occu_ant == ant):
+            self.tags[ant][tid] = 0
+
+    '''
+    # tags process function without sort ant_id
+    def procTagsNew(self, type, rssi, tid, ant):
+        if(tid not in self.tags[ant]):
+            if(self.reverse):
+                print("pick up:", tid)
+                self.pickupEvent(tid, ant)
+            else:
+                print("put down:", tid)
+                self.putdownEvent(tid, ant)
+        self.tags[ant][tid] = 0
+    '''
+
     def procTagsTimeout(self):
-        for id in list(self.tags.keys()):
-            self.tags[id][0] += 1
-            if(self.tags[id][0] >= self.timeout):
-                if(self.reverse):
-                    print("put down:", id)
-                    self.putdownEvent(id, self.tags[id][1])
-                else:
-                    print("pick up:", id)
-                    self.pickupEvent(id, self.tags[id][1])
-                del self.tags[id]
+        for ant in range(len(self.tags)):
+            for tid in list(self.tags[ant].keys()):
+                self.tags[ant][tid] += 1
+                if(self.tags[ant][tid] >= self.timeout):
+                    if(self.reverse):
+                        print("put down:", tid)
+                        self.putdownEvent(tid, ant)
+                    else:
+                        print("pick up:", tid)
+                        self.pickupEvent(tid, ant)
+                    del self.tags[ant][tid]
 
     # please rewrite these two functions to implement the events    
     def pickupEvent(self, tag, ant_id):
